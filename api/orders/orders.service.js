@@ -1,0 +1,188 @@
+const dbService = require('../../services/db.service')
+const ObjectId = require('mongodb').ObjectId
+const asyncLocalStorage = require('../../services/als.service')
+
+async function query(filterBy = {}) {
+    try {
+    const criteria = _buildCriteria(filterBy)
+    const collection = await dbService.getCollection('order')
+    const orders = await collection.find(criteria).toArray()
+//     let regex = new RegExp(filterBy.name, 'i')
+//    return orders.filter((order) => regex.test(order.name));
+   return orders
+} catch (err) {
+logger.error('cannot find orders', err)
+throw err
+}
+}
+
+
+// async function query(filterBy = {}) {
+//     try {
+//         const criteria = _buildCriteria(filterBy)
+//         const collection = await dbService.getCollection('orders')
+//         const orders = await collection.find(criteria).toArray()
+//         orders = await collection.aggregate([
+//             {
+//                 $match: filterBy
+//             },
+//             {
+//                 $lookup:
+//                 {
+//                     localField: 'byUserId',
+//                     from: 'user',
+//                     foreignField: '_id',
+//                     as: 'byUser'
+//                 }
+//             },
+//             {
+//                 $unwind: '$byUser'
+//             },
+//             {
+//                 $lookup:
+//                 {
+//                     localField: 'aboutUserId',
+//                     from: 'user',
+//                     foreignField: '_id',
+//                     as: 'aboutUser'
+//                 }
+//             },
+//             {
+//                 $unwind: '$aboutUser'
+//             }
+//         ]).toArray()
+//         orders = orders.map(order => {
+//            order.byUser = { _id:order.byUser._id, fullname:order.byUser.fullname }
+//            order.aboutUser = { _id:order.aboutUser._id, fullname:order.aboutUser.fullname }
+//             delete order.byUserId
+//             delete order.aboutUserId
+//             return order
+//         })
+
+//         return orders
+//     } catch (err) {
+//         logger.error('cannot find orders', err)
+//         throw err
+//     }
+
+// }
+
+// async function remove(orderId) {
+//     try {
+//         const collection = await dbService.getCollection('orders')
+//         await collection.deleteOne({"_id":ObjectId(orderId)})
+//     } catch (err) {
+//         logger.error(`cannot remove order ${orderId}`, err)
+//         throw err
+//     }
+// }
+
+
+async function remove(orderId) {
+    try {
+        const store = asyncLocalStorage.getStore()
+        const { userId, isAdmin } = store
+        const collection = await dbService.getCollection('order')
+        // remove only if user is owner/admin
+        const query = { _id:+orderId }
+        // const query = { _id: ObjectId(orderId) }
+        console.log(query);
+        if (!isAdmin) query.byUserId = ObjectId(userId)
+        // await collection.deleteOne(query)
+        return await collection.deleteOne({ _id: ObjectId(orderId), byUserId: ObjectId(userId) })
+    } catch (err) {
+        logger.error(`cannot remove order ${orderId}`, err)
+        throw err
+    }
+}
+
+
+async function add(order) {
+    console.log(order);
+    try {
+        // peek only updatable fields!
+        const orderToAdd = {
+            byUserId: ObjectId(order.byUserId),
+            aboutUserId: ObjectId(order.aboutUserId),
+            txt: order.txt
+        }
+        const collection = await dbService.getCollection('order')
+        await collection.insertOne(orderToAdd)
+        return orderToAdd;
+    } catch (err) {
+        // logger.error('cannot insert order', err)
+        throw err
+    }
+}
+
+function _buildCriteria(filterBy='') {
+    let criteria = {
+       filterBy
+    }
+    // const name = {$regex :filterBy.loc.address,$options :'i'}
+    // criteria.$and.push({name : name})
+    // if(filterBy.inStock==='inStock')criteria.$and.push({inStock:true})
+    // if(filterBy.inStock==='OutStock')criteria.$and.push({inStock:false})
+    // if(filterBy.type==='funny')criteria.$and.push({type:'funny'})
+    // if(filterBy.type==='sad')criteria.$and.push({type:'sad'}) 
+    // if(filterBy.type==='sweet')criteria.$and.push({type:'sweet'})
+
+    return criteria
+}
+
+async function getById(orderId) {
+    try {
+        const collection = await dbService.getCollection('order')
+        const order = await collection.findOne({ '_id': ObjectId(orderId) })
+
+        return order
+    } catch (err) {
+        logger.error(`while finding user ${userId}`, err)
+        throw err
+    }
+}
+
+async function update(order) {
+    try {
+        // peek only updatable fields!
+        const orderToSave = {
+            _id: ObjectId(order._id),
+            buyer: {_id: order._id, fullname: order.fullname},
+            createdAt: order.createdAt,
+            dates: order.dates,
+            guests: order.guests,
+            hostId : order.hostId,
+            status: order.status,
+            stay: {_id: order.stay._id, name: order.stay.name, price: order.stay.price},
+            totalPrice: order.totalPrice
+        }
+        const collection = await dbService.getCollection('order')
+        await collection.updateOne({ '_id': orderToSave._id }, { $set: orderToSave })
+        return orderToSave
+    } catch (err) {
+        logger.error(`cannot update order ${order._id}`, err)
+        throw err
+    }
+}
+
+async function addMany(orders) {
+    const prms = []
+    orders.forEach(order => {
+        prms.push(add(order))
+    })
+
+    return await Promise.all(prms)
+}
+
+
+
+module.exports = {
+    query,
+    remove,
+    add,
+    getById,
+    update,
+    addMany
+}
+
+
