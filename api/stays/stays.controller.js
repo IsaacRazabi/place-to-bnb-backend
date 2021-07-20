@@ -60,6 +60,7 @@ async function addStay(req, res) {
 
 async function getById(req, res) {
     const { id } = req.params
+    console.log(id);
     try {
         const stays = await staysService.getById(id)
         res.send(stays)
