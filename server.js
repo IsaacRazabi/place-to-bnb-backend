@@ -31,6 +31,7 @@ const userRoutes = require('./api/user/user.routes')
 const reviewRoutes = require('./api/review/review.routes')
 const {connectSockets} = require('./services/socket.service')
 const staysRoutes = require('./api/stays/stays.routes')
+const ordersRoutes = require('./api/orders/orders.routes')
 
 // routes
 const setupAsyncLocalStorage = require('./middlewares/setupAls.middleware')
@@ -39,6 +40,7 @@ app.use('/api/stay', staysRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/user', userRoutes)
 app.use('/api/review', reviewRoutes)
+app.use('/api/order', ordersRoutes)
 connectSockets(http, session)
 
 // Make every server-side-route to match the index.html

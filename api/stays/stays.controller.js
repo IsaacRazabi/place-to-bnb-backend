@@ -40,11 +40,11 @@ async function addStay(req, res) {
     try {
         var stay = req.body
         stay.byUserId = req.session.user._id
-        stay = await staysService.add(stay)
         
         // prepare the updated stay for sending out
         stay.byUser = await userService.getById(stay.byUserId)
-        stay.aboutUser = await userService.getById(stay.aboutUserId)
+        // stay.aboutUser = await userService.getById(stay.aboutUserId)
+        stay = await staysService.add(stay)
 
         console.log('CTRL SessionId:', req.sessionID);
         socketService.broadcast({type: 'stay-added', data: stay})
@@ -60,7 +60,6 @@ async function addStay(req, res) {
 
 async function getById(req, res) {
     const { id } = req.params
-    console.log(id);
     try {
         const stays = await staysService.getById(id)
         res.send(stays)
@@ -105,7 +104,6 @@ async function updateStay(req, res) {
     try {
         const { user } = req.session
         const vUser = await userService.getById(user?._id)
-
         if (!vUser?.isAdmin) {
             res.status(401).send({ err: 'Not allowed' })
             return

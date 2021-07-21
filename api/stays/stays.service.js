@@ -113,6 +113,11 @@ async function add(stay) {
   createdAt: stay.createdAt,
   imgUrls: stay.imgUrls,
   reviews: stay.reviews ||[],
+  host:{
+    _id:stay.host._id ,
+    fullname: stay.host.fullname ,
+    imgUrl:stay.host.imgUrl
+  }
         }
         
         const collection = await dbService.getCollection('stay')

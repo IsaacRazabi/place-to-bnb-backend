@@ -1,6 +1,11 @@
 const dbService = require('../../services/db.service')
 const ObjectId = require('mongodb').ObjectId
 const asyncLocalStorage = require('../../services/als.service')
+const userService = require('../user/user.service')
+const stayService = require('../stays/stays.service')
+
+
+
 
 async function query(filterBy = {}) {
     try {
@@ -98,16 +103,49 @@ async function remove(orderId) {
 
 
 async function add(order) {
-    console.log(order);
     try {
-        // peek only updatable fields!
         const orderToAdd = {
-            byUserId: ObjectId(order.byUserId),
-            aboutUserId: ObjectId(order.aboutUserId),
-            txt: order.txt
-        }
+                hostId: order.hostId,
+                createdAt: order.createdAt,
+                buyer: {
+                  _id: order.buyer._id,
+                  fullname: order.buyer.fullname,
+                },
+                totalPrice: order.totalPrice,
+                // startDate: "2025/10/15",
+                // endDate: "2025/10/17",
+                dates: order.dates,
+                guests: order.guests,
+                stay: {
+                  _id: order.stay._id,
+                  name: order.stay.name,
+                  price: order.stay.price,
+                },
+                status: order.status,
+                byUserId:order.byUserId,
+                byUser:{
+                  _id: order.byUser._id,
+                  username: order.byUser.username,
+                  fullname: order.byUser.fullname,
+                }
+              };
+        
         const collection = await dbService.getCollection('order')
         await collection.insertOne(orderToAdd)
+
+        
+        const updatedStay =  await stayService.getById(order.stay._id)
+        if(!updatedStay.orders) updatedStay.orders = []
+        updatedStay.orders.push(orderToAdd);
+        const updatedUser = await userService.getById(order.hostId)
+        // if(!updatedUser.stayes.orders) updatedUser.stayes.orders = []
+const idx  = updatedUser.stayes.findIndex(stay=>stay._id===updatedStay._id)
+        updatedUser.stayes.splice(idx,1,updatedStay)
+
+        // updatedUser.stayes.orders.push( updatedStay)
+        updatesUser = await userService.update(updatedUser)
+
+
         return orderToAdd;
     } catch (err) {
         // logger.error('cannot insert order', err)
@@ -158,6 +196,12 @@ async function update(order) {
         }
         const collection = await dbService.getCollection('order')
         await collection.updateOne({ '_id': orderToSave._id }, { $set: orderToSave })
+
+
+  
+
+
+
         return orderToSave
     } catch (err) {
         logger.error(`cannot update order ${order._id}`, err)
