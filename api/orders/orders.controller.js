@@ -7,11 +7,11 @@ const { json } = require('express')
 
 
 
-async function getToys(req, res) {
-    let filterData = JSON.parse(req.query.params);
-    let {filterBy} = filterData;
+async function getOrders(req, res) {
+    let filterBy = req.query.params
     try {
         const orders = await ordersService.query(filterBy)
+        
         res.send(orders)
     } catch (err) {
         logger.error('Cannot get orders', err)
@@ -21,8 +21,7 @@ async function getToys(req, res) {
 
 
 
-async function deleteToy(req, res) {
-    console.log(req.params.id);
+async function deleteOrder(req, res) {
     try {
         await ordersService.remove(req.params.id)
         // res.send({ msg: 'Deleted successfully' })
@@ -33,20 +32,22 @@ async function deleteToy(req, res) {
 }
 
 
-async function addToy(req, res) {
+async function addOrder(req, res) {
     try {
         var order = req.body
-        console.log(req.body);
+        
         order.byUserId = req.session.user._id
-        order = await ordersService.add(order)
         
         // prepare the updated order for sending out
+        
         order.byUser = await userService.getById(order.byUserId)
-        order.aboutUser = await userService.getById(order.aboutUserId)
+        order = await ordersService.add(order)
+        // order.aboutUser = await userService.getById(order.aboutUserId)
 
         console.log('CTRL SessionId:', req.sessionID);
         socketService.broadcast({type: 'order-added', data: order})
-        socketService.emitToAll({type: 'user-updated', data: order.byUser, room: req.session.user._id})
+        // socketService.emitToAll({type: 'user-updated', data: order.byUser, room: req.session.user._id})
+        socketService.emitTo({type: 'user-updated', data: order.byUser, room: req.session.user._id})
         res.send(order)
 
     } catch (err) {
@@ -67,7 +68,7 @@ async function getById(req, res) {
     }
 }
 
-async function addManyToys(req, res) {
+async function addManyOrders(req, res) {
     try {
         const { user } = req.session
         const vUser = await userService.getById(user?._id)
@@ -98,16 +99,15 @@ async function addManyToys(req, res) {
 }
 
 
-async function updateToy(req, res) {
+async function updateOrder(req, res) {
     try {
-        const { user } = req.session
-        const vUser = await userService.getById(user?._id)
+        // const { user } = req.session
+        // const vUser = await userService.getById(user?._id)
 
-        if (!vUser?.isAdmin) {
-            res.status(401).send({ err: 'Not allowed' })
-            return
-        }
-
+        // if (!vUser?.isAdmin) {
+        //     res.status(401).send({ err: 'Not allowed' })
+        //     return
+        // }
         var { order } = req.body
         // order.byUserId = req.session.user._id
         order = await ordersService.update(order)
@@ -145,11 +145,11 @@ async function updateToy(req, res) {
 // }
 
 module.exports = {
-    getToys,
-    deleteToy,
-    addToy,
+    getOrders,
+    deleteOrder,
+    addOrder,
     getById,
-    addManyToys,
-updateToy,
+    addManyOrders,
+updateOrder,
 // createToy
 }

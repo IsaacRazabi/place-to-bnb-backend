@@ -1,12 +1,18 @@
 const dbService = require('../../services/db.service')
 const ObjectId = require('mongodb').ObjectId
 const asyncLocalStorage = require('../../services/als.service')
+// const userService = require('../user/user.service')
+const stayService = require('../stays/stays.service')
 
-async function query(filterBy = {}) {
+
+
+
+async function query() {
+
     try {
-    const criteria = _buildCriteria(filterBy)
+    // const criteria = _buildCriteria(filterBy)
     const collection = await dbService.getCollection('order')
-    const orders = await collection.find(criteria).toArray()
+    const orders = await collection.find().toArray()
 //     let regex = new RegExp(filterBy.name, 'i')
 //    return orders.filter((order) => regex.test(order.name));
    return orders
@@ -86,7 +92,7 @@ async function remove(orderId) {
         // remove only if user is owner/admin
         const query = { _id:+orderId }
         // const query = { _id: ObjectId(orderId) }
-        console.log(query);
+      
         if (!isAdmin) query.byUserId = ObjectId(userId)
         // await collection.deleteOne(query)
         return await collection.deleteOne({ _id: ObjectId(orderId), byUserId: ObjectId(userId) })
@@ -98,16 +104,40 @@ async function remove(orderId) {
 
 
 async function add(order) {
-    console.log(order);
     try {
-        // peek only updatable fields!
         const orderToAdd = {
-            byUserId: ObjectId(order.byUserId),
-            aboutUserId: ObjectId(order.aboutUserId),
-            txt: order.txt
-        }
+                hostId: order.hostId,
+                createdAt: order.createdAt,
+                buyer: {
+                  _id: order.buyer._id,
+                  fullname: order.buyer.fullname,
+                },
+                totalPrice: order.totalPrice,
+                dates: order.dates,
+                guests: order.guests,
+                stay: {
+                  _id: order.stay._id,
+                  name: order.stay.name,
+                  price: order.stay.price,
+                },
+                status: order.status,
+                byUserId:order.byUserId,
+                byUser:{
+                  _id: order.byUser._id,
+                  username: order.byUser.username,
+                  fullname: order.byUser.fullname,
+                }
+              };
+        
         const collection = await dbService.getCollection('order')
         await collection.insertOne(orderToAdd)
+
+        
+        const updatedStay =  await stayService.getById(order.stay._id)
+        if(!updatedStay.orders) updatedStay.orders = []
+        updatedStay.orders.push(orderToAdd);
+        await stayService.update(updatedStay)
+
         return orderToAdd;
     } catch (err) {
         // logger.error('cannot insert order', err)
@@ -145,6 +175,7 @@ async function getById(orderId) {
 async function update(order) {
     try {
         // peek only updatable fields!
+        console.log(order);
         const orderToSave = {
             _id: ObjectId(order._id),
             buyer: {_id: order._id, fullname: order.fullname},
@@ -158,6 +189,12 @@ async function update(order) {
         }
         const collection = await dbService.getCollection('order')
         await collection.updateOne({ '_id': orderToSave._id }, { $set: orderToSave })
+
+
+  
+
+
+
         return orderToSave
     } catch (err) {
         logger.error(`cannot update order ${order._id}`, err)

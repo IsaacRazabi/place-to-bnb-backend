@@ -10,7 +10,7 @@ const router = express.Router()
 router.get('/', log, getOrders)
 router.post('/',  requireAuth, addOrder)
 router.delete('/:id',  requireAuth, deleteOrder)
-router.put('/', requireAdmin, updateOrder)
+router.put('/', updateOrder)
 
 router.get('/:id', log, getById)
 router.post('/many', requireAdmin, addOrder)
