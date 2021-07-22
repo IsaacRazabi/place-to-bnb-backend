@@ -1,17 +1,18 @@
 const dbService = require('../../services/db.service')
 const ObjectId = require('mongodb').ObjectId
 const asyncLocalStorage = require('../../services/als.service')
-const userService = require('../user/user.service')
+// const userService = require('../user/user.service')
 const stayService = require('../stays/stays.service')
 
 
 
 
-async function query(filterBy = {}) {
+async function query() {
+
     try {
-    const criteria = _buildCriteria(filterBy)
+    // const criteria = _buildCriteria(filterBy)
     const collection = await dbService.getCollection('order')
-    const orders = await collection.find(criteria).toArray()
+    const orders = await collection.find().toArray()
 //     let regex = new RegExp(filterBy.name, 'i')
 //    return orders.filter((order) => regex.test(order.name));
    return orders
@@ -91,7 +92,7 @@ async function remove(orderId) {
         // remove only if user is owner/admin
         const query = { _id:+orderId }
         // const query = { _id: ObjectId(orderId) }
-        console.log(query);
+      
         if (!isAdmin) query.byUserId = ObjectId(userId)
         // await collection.deleteOne(query)
         return await collection.deleteOne({ _id: ObjectId(orderId), byUserId: ObjectId(userId) })
@@ -112,8 +113,6 @@ async function add(order) {
                   fullname: order.buyer.fullname,
                 },
                 totalPrice: order.totalPrice,
-                // startDate: "2025/10/15",
-                // endDate: "2025/10/17",
                 dates: order.dates,
                 guests: order.guests,
                 stay: {
@@ -137,14 +136,7 @@ async function add(order) {
         const updatedStay =  await stayService.getById(order.stay._id)
         if(!updatedStay.orders) updatedStay.orders = []
         updatedStay.orders.push(orderToAdd);
-        const updatedUser = await userService.getById(order.hostId)
-        // if(!updatedUser.stayes.orders) updatedUser.stayes.orders = []
-const idx  = updatedUser.stayes.findIndex(stay=>stay._id===updatedStay._id)
-        updatedUser.stayes.splice(idx,1,updatedStay)
-
-        // updatedUser.stayes.orders.push( updatedStay)
-        updatesUser = await userService.update(updatedUser)
-
+        await stayService.update(updatedStay)
 
         return orderToAdd;
     } catch (err) {
@@ -183,6 +175,7 @@ async function getById(orderId) {
 async function update(order) {
     try {
         // peek only updatable fields!
+        console.log(order);
         const orderToSave = {
             _id: ObjectId(order._id),
             buyer: {_id: order._id, fullname: order.fullname},

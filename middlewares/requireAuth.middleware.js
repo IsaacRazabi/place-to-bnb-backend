@@ -1,6 +1,7 @@
 const logger = require('../services/logger.service')
 
 function requireAuth(req, res, next) {
+  console.log(req.session.user,req.session);
   if (!req.session || !req.session.user) {
     res.status(401).end('Not authenticated, Please Login')
     return

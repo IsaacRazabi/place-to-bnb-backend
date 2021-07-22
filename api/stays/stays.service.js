@@ -18,67 +18,6 @@ throw err
 }
 
 
-// async function query(filterBy = {}) {
-//     try {
-//         const criteria = _buildCriteria(filterBy)
-//         const collection = await dbService.getCollection('stays')
-//         const stays = await collection.find(criteria).toArray()
-//         stays = await collection.aggregate([
-//             {
-//                 $match: filterBy
-//             },
-//             {
-//                 $lookup:
-//                 {
-//                     localField: 'byUserId',
-//                     from: 'user',
-//                     foreignField: '_id',
-//                     as: 'byUser'
-//                 }
-//             },
-//             {
-//                 $unwind: '$byUser'
-//             },
-//             {
-//                 $lookup:
-//                 {
-//                     localField: 'aboutUserId',
-//                     from: 'user',
-//                     foreignField: '_id',
-//                     as: 'aboutUser'
-//                 }
-//             },
-//             {
-//                 $unwind: '$aboutUser'
-//             }
-//         ]).toArray()
-//         stays = stays.map(stay => {
-//            stay.byUser = { _id:stay.byUser._id, fullname:stay.byUser.fullname }
-//            stay.aboutUser = { _id:stay.aboutUser._id, fullname:stay.aboutUser.fullname }
-//             delete stay.byUserId
-//             delete stay.aboutUserId
-//             return stay
-//         })
-
-//         return stays
-//     } catch (err) {
-//         logger.error('cannot find stays', err)
-//         throw err
-//     }
-
-// }
-
-// async function remove(stayId) {
-//     try {
-//         const collection = await dbService.getCollection('stays')
-//         await collection.deleteOne({"_id":ObjectId(stayId)})
-//     } catch (err) {
-//         logger.error(`cannot remove stay ${stayId}`, err)
-//         throw err
-//     }
-// }
-
-
 async function remove(stayId) {
     try {
         const store = asyncLocalStorage.getStore()
@@ -87,7 +26,7 @@ async function remove(stayId) {
         // remove only if user is owner/admin
         const query = { _id:+stayId }
         // const query = { _id: ObjectId(stayId) }
-        console.log(query);
+        
         if (!isAdmin) query.byUserId = ObjectId(userId)
         // await collection.deleteOne(query)
         return await collection.deleteOne({ _id: ObjectId(stayId), byUserId: ObjectId(userId) })
@@ -117,7 +56,9 @@ async function add(stay) {
     _id:stay.host._id ,
     fullname: stay.host.fullname ,
     imgUrl:stay.host.imgUrl
-  }
+  },
+  orders: stay.orders
+ 
         }
         
         const collection = await dbService.getCollection('stay')
@@ -166,13 +107,22 @@ async function update(stay) {
             summary: stay.summary,
             price: stay.price,
             type: stay.type,
-            loc:stay.loc,
             imgUrls: stay.imgUrls,
-            createdAt : stay.createdAt
-            // reviews: stay.reviews
+            createdAt : stay.createdAt,
+            reviews: stay.reviews || [],
+            orders:stay.orders ||[],
+            byUserId: ObjectId(stay.byUserId),
+            loc: { address: stay.loc.address },
+            host:{
+            _id:stay.host._id ,
+            fullname: stay.host.fullname ,
+            imgUrl:stay.host.imgUrl,
+            },
+            orders : stay.orders
         }
         const collection = await dbService.getCollection('stay')
         await collection.updateOne({ '_id': stayToSave._id }, { $set: stayToSave })
+        
         return stayToSave
     } catch (err) {
         logger.error(`cannot update stay ${stay._id}`, err)

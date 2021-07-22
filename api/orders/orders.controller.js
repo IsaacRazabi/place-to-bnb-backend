@@ -8,9 +8,10 @@ const { json } = require('express')
 
 
 async function getOrders(req, res) {
-    let filterBy = req.query
+    let filterBy = req.query.params
     try {
         const orders = await ordersService.query(filterBy)
+        
         res.send(orders)
     } catch (err) {
         logger.error('Cannot get orders', err)
@@ -100,14 +101,13 @@ async function addManyOrders(req, res) {
 
 async function updateOrder(req, res) {
     try {
-        const { user } = req.session
-        const vUser = await userService.getById(user?._id)
+        // const { user } = req.session
+        // const vUser = await userService.getById(user?._id)
 
-        if (!vUser?.isAdmin) {
-            res.status(401).send({ err: 'Not allowed' })
-            return
-        }
-
+        // if (!vUser?.isAdmin) {
+        //     res.status(401).send({ err: 'Not allowed' })
+        //     return
+        // }
         var { order } = req.body
         // order.byUserId = req.session.user._id
         order = await ordersService.update(order)

@@ -28,10 +28,18 @@ function connectSockets(http, session) {
         })
         socket.on('chat newMsg', msg => {
             // emits to all sockets:
-            // gIo.emit('chat addMsg', msg)
+            gIo.emit('chat addMsg', msg)
             // emits only to sockets in the same room
-            gIo.to(socket.myTopic).emit('chat addMsg', msg)
+            gIo.to(socket).emit('chat addMsg', msg)
         })
+       
+        // socket.on('change status', msg => {
+        //     // emits to all sockets:
+        //     gIo.emit('chat addMsg', msg)
+        //     // emits only to sockets in the same room
+        //     gIo.to(socket).emit('chat addMsg', msg)
+        // })
+
         socket.on('user-watch', userId => {
             socket.join(userId)
         })
@@ -48,12 +56,12 @@ function emitToAll({ type, data, room = null }) {
 function emitToUser({ type, data, userId }) {
     const sockets = _getAllSockets()
     const socket = sockets.find(s => s.handshake?.session?.user?._id == userId)
-    // const socket = sockets.find(s => {
-    //     // if (!s.handshake) return logger.debug('No handshake')
-    //     // if (!s.handshake.session) return logger.debug('No handshake.session')
-    //     // if (!s.handshake.session.user) return logger.debug('No handshake.session.user')
-    //     // return s.handshake.session.user._id === userId
-    // })
+    const socket = sockets.find(s => {
+        if (!s.handshake) return logger.debug('No handshake')
+        if (!s.handshake.session) return logger.debug('No handshake.session')
+        if (!s.handshake.session.user) return logger.debug('No handshake.session.user')
+        return s.handshake.session.user._id === userId
+    })
     if (!socket) {
         logger.debug('Socket not found for user: ' + userId)
         _printSockets();
