@@ -26,19 +26,26 @@ function connectSockets(http, session) {
             // logger.debug('Session ID is', socket.handshake.sessionID)
             socket.myTopic = topic
         })
-        socket.on('chat newMsg', msg => {
+        socket.on('chat newMsg', msg => { 
             // emits to all sockets:
             gIo.emit('chat addMsg', msg)
             // emits only to sockets in the same room
             gIo.to(socket).emit('chat addMsg', msg)
         })
        
-        // socket.on('change status', msg => {
-        //     // emits to all sockets:
-        //     gIo.emit('chat addMsg', msg)
-        //     // emits only to sockets in the same room
-        //     gIo.to(socket).emit('chat addMsg', msg)
-        // })
+        socket.on('order newStatus', status => { //on: listen to order new status => we have aces to the data we receive
+            // emits to all sockets:
+            gIo.emit('status', (status)=> console.log(status))
+            // emits only to sockets in the same room
+            gIo.to(socket).emit('status', status)
+           
+        })
+        socket.on('orderToSend', order => {
+            // emits to all sockets:
+            gIo.emit('newOrder', order)
+            // emits only to sockets in the same room
+            gIo.to(socket.myTopic).emit('newOrder', order)
+        })
 
         socket.on('user-watch', userId => {
             socket.join(userId)

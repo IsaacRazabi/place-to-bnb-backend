@@ -104,7 +104,6 @@ async function updateStay(req, res) {
         var stay  = req.body
        const orderToUpdate = await ordersService.getById(stay.orders[0]._id)
        orderToUpdate.status=stay.orders[0].status
-       console.log(orderToUpdate);
        await ordersService.update(orderToUpdate)
 
         // const { user } = req.session

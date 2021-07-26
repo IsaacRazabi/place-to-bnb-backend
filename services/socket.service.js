@@ -20,9 +20,21 @@ function connectSockets(http, session) {
         })
         socket.on('chat newMsg', msg => {
             // emits to all sockets:
-            // gIo.emit('chat addMsg', msg)
+            gIo.emit('chat addMsg', msg)
             // emits only to sockets in the same room
-            gIo.to(socket.myTopic).emit('chat addMsg', msg)
+            // gIo.to(socket.myTopic).emit('chat addMsg', msg)
+        })
+        socket.on('order newStatus', status => {
+            // emits to all sockets:
+            gIo.emit('status', status)
+            // emits only to sockets in the same room
+            gIo.to(socket.myTopic).emit('status', status)
+        })
+        socket.on('orderToSend', order => {
+            // emits to all sockets:
+            gIo.emit('newOrder', order)
+            // emits only to sockets in the same room
+            gIo.to(socket.myTopic).emit('newOrder', order)
         })
         socket.on('user-watch', userId => {
             socket.join('watching:' + userId)
