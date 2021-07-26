@@ -113,7 +113,8 @@ async function add(order) {
                   fullname: order.buyer.fullname,
                 },
                 totalPrice: order.totalPrice,
-                dates: order.dates,
+                checkIn: order.checkIn,
+                checkOut: order.checkOut,
                 guests: order.guests,
                 stay: {
                   _id: order.stay._id,
@@ -175,13 +176,13 @@ async function getById(orderId) {
 async function update(order) {
     try {
         // peek only updatable fields!
-        console.log(order);
+    
         const orderToSave = {
             _id: ObjectId(order._id),
             buyer: {_id: order._id, fullname: order.fullname},
             createdAt: order.createdAt,
-            dates: order.dates,
-            guests: order.guests,
+            checkIn: order.checkIn,
+            checkOut: order.checkOut,
             hostId : order.hostId,
             status: order.status,
             stay: {_id: order.stay._id, name: order.stay.name, price: order.stay.price},

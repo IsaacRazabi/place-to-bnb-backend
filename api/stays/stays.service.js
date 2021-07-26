@@ -5,11 +5,11 @@ const asyncLocalStorage = require('../../services/als.service')
 async function query(filterBy) {
     try {
     const criteria = _buildCriteria(filterBy)
-    
     const collection = await dbService.getCollection('stay')
     const stays = await collection.find(criteria).toArray()
 //     let regex = new RegExp(filterBy.name, 'i')
 //    return stays.filter((stay) => regex.test(stay.name));
+
    return stays
 } catch (err) {
 logger.error('cannot find stays', err)
@@ -57,7 +57,7 @@ async function add(stay) {
     fullname: stay.host.fullname ,
     imgUrl:stay.host.imgUrl
   },
-  orders: stay.orders
+  orders: stay.orders || []
  
         }
         
@@ -75,7 +75,6 @@ function _buildCriteria(filterBy) {
         $and:[]
     }
     const name = {$regex :JSON.parse(filterBy.loc).address,$options :'i'}
-console.log('name',name);
     criteria.$and.push({name : name})
   
     // if(filterBy.inStock==='inStock')criteria.$and.push({inStock:true})
